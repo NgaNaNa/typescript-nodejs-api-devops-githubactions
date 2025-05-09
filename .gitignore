@@ -2,8 +2,6 @@ node_modules/
 .DS_Store
 dist/
 .git
-Dockerfile*
-.dockerignore
 *.log
 *.env
 .DS_Store
