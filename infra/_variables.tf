@@ -3,6 +3,12 @@ variable "environment" {
   type        = string
 }
 
+variable "aws_region" {
+  description = "AWS Region to deploy into"
+  type        = string
+  default     = "ap-southeast-2"
+}
+
 variable "name" {
   type        = string
   default     = "ecs-cluster-ec2"
