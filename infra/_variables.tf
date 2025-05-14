@@ -20,7 +20,7 @@ variable "vpc_id" {
   description = "VPC ID where the ECS cluster will be created"
 }
 
-variable "public_subnet_ids" {
+variable "app_public_subnet_ids" {
   type = list(string)
 }
 
