@@ -53,3 +53,9 @@ variable "container_port" {
   default     = 3000
   description = "Listening port for the container"
 }
+
+variable "node_app_health_check_path" {
+  type        = string
+  default     = "/ping"
+  description = "Health check path for the target group"
+}
