@@ -9,12 +9,6 @@ variable "aws_region" {
   default     = "ap-southeast-2"
 }
 
-# variable "name" {
-#   type        = string
-#   default     = "ecs-cluster-ec2"
-#   description = "Name of the ECS cluster"
-# }
-
 variable "vpc_id" {
   type        = string
   description = "VPC ID where the ECS cluster will be created"
@@ -50,8 +44,8 @@ variable "key_name" {
   description = "Name of the key pair to use for SSH access to the EC2 instances."
 }
 
-# variable "additional_sg_ids" {
-#   description = "Extra SGs to attach to EC2 instances (e.g. allow outbound 0.0.0.0/0)."
-#   type        = list(string)
-#   default     = []
-# }
+variable "container_port" {
+  type        = number
+  default     = 3000
+  description = "Listening port for the container"
+}
