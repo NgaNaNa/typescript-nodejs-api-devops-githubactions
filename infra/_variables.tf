@@ -9,46 +9,79 @@ variable "aws_region" {
   default     = "ap-southeast-2"
 }
 
-# variable "name" {
-#   type        = string
-#   default     = "ecs-cluster-ec2"
-#   description = "Name of the ECS cluster"
-# }
+variable "vpc_id" {
+  type        = string
+  description = "VPC ID where the ECS cluster will be created"
+}
 
-# variable "vpc_id" {
-#   type        = string
-#   description = "VPC ID where the ECS cluster will be created"
-# }
+variable "app_public_subnet_ids" {
+  type = list(string)
+}
 
-# variable "public_subnet_ids" {
-#   type = list(string)
-# }
+variable "alb_public_subnet_ids" {
+  type = list(string)
+}
 
-# variable "instance_type" {
-#   type    = string
-#   default = "t2.micro"
-# }
-# variable "desired_capacity" {
-#   type    = number
-#   default = 1
-# }
-# variable "min_size" {
-#   type    = number
-#   default = 1
-# }
-# variable "max_size" {
-#   type    = number
-#   default = 2
-# }
+variable "instance_type" {
+  type    = string
+  default = "t2.micro"
+}
 
-# variable "key_name" {
-#   type        = string
-#   default     = ""
-#   description = "Name of the key pair to use for SSH access to the EC2 instances."
-# }
+variable "desired_capacity" {
+  type    = number
+  default = 1
+}
 
-# variable "additional_sg_ids" {
-#   description = "Extra SGs to attach to EC2 instances (e.g. allow outbound 0.0.0.0/0)."
-#   type        = list(string)
-#   default     = []
-# }
+variable "min_size" {
+  type    = number
+  default = 1
+}
+
+variable "max_size" {
+  type    = number
+  default = 2
+}
+
+variable "key_name" {
+  type        = string
+  default     = ""
+  description = "Name of the key pair to use for SSH access to the EC2 instances."
+}
+
+variable "container_port" {
+  type        = number
+  default     = 3000
+  description = "Listening port for the container"
+}
+
+variable "node_app_health_check_path" {
+  type        = string
+  default     = "/ping"
+  description = "Health check path for the target group"
+}
+
+# Public docker image for the application
+variable "docker_image" {
+  type    = string
+  default = "nrampling/demo-node-app:1.0.0"
+}
+
+variable "desired_service_count" {
+  type    = number
+  default = 1
+}
+
+variable "node_app_container_name" {
+  type    = string
+  default = "node-app"
+}
+
+variable "log_group_name" {
+  type    = string
+  default = "/ecs/node-app"
+}
+
+variable "log_stream_prefix" {
+  type    = string
+  default = "ecs"
+}

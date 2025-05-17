@@ -21,5 +21,5 @@ resource "aws_iam_role_policy_attachment" "aws_managed_ecs" {
 
 resource "aws_iam_instance_profile" "ecs_instance_profile" {
   name = "${var.environment}-ecs-instance-profile"
-  role = "${var.environment}-ecs-instance"
+  role = aws_iam_role.ecs_instance_role.name
 }
