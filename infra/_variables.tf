@@ -65,3 +65,13 @@ variable "docker_image" {
   type    = string
   default = "nrampling/demo-node-app:1.0.0"
 }
+
+variable "desired_service_count" {
+  type    = number
+  default = 1
+}
+
+variable "node_app_container_name" {
+  type    = string
+  default = "node-app"
+}

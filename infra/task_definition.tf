@@ -1,5 +1,5 @@
 resource "aws_ecs_task_definition" "node_app_task" {
-  family             = "${var.environment}-node-app-task"
+  family             = "${var.environment}-node-app"
   network_mode       = "awsvpc"
   cpu                = "256"
   memory             = "512"
@@ -7,7 +7,7 @@ resource "aws_ecs_task_definition" "node_app_task" {
 
   container_definitions = jsonencode([
     {
-      name  = "node-app"
+      name  = var.node_app_container_name
       image = var.docker_image
       portMappings = [{
         containerPort = var.container_port
