@@ -1,18 +1,116 @@
-# typescript-nodejs-api-devops-githubactions
-Personal project demonstrating CICD set up on GitHub Actions for deploying TypeScript Nodejs API application --> Docker --> ECS clusters
+# TypeScript Node.js API → Docker → Amazon ECS
+*(local build & Terraform deploy – GitHub Actions pipeline coming soon)*
 
-## Usage
+This repo walks you through containerising a simple Express API, pushing the image to Docker Hub, and standing up the runtime stack on **Amazon ECS (EC2 capacity)** with **Terraform**.  
+The VPC, public subnets, Internet Gateway, and Terraform remote-state bucket (S3 + DynamoDB) are assumed to exist already.
+
+---
+
+## Prerequisites
+
+| Tool / service | Notes |
+|----------------|-------|
+| **AWS CLI v2** | Profile used below: `node-app-terraform-dev` |
+| **Terraform ≥ 1.7** | Remote backend: S3 bucket `node-app-infra-tfstate-<env>` |
+| **Docker v24+** | Buildx enabled (comes pre‑installed) |
+| **Docker Hub account** | Public repo: `nrampling/demo-node-app` |
+
+---
+
+## Repo structure
+
+```
+infra/
+├─ _backend.tf             # remote state (S3 + DynamoDB)
+├─ _providers.tf           # AWS provider / default tags
+├─ _variables.tf           # all inputs
+├─ cluster.tf              # ECS cluster (awsvpc)
+├─ asg_capacity.tf         # ASG + capacity provider
+├─ task_definition.tf      # image, ports, health check, logs
+├─ ecs_service.tf          # service + load balancer attachment
+├─ cloudwatch_logs.tf
+└─ envs/
+   ├─ dev.tfvars
+   └─ prod.tfvars
+```
+
+---
+
+## 1 · Initialise Terraform (one‑time per env)
+
 ```bash
-# Initialise from chosen environment
-cd envs/dev
-terraform init
+cd infra
+terraform init   -backend-config="bucket=node-app-infra-tfstate-dev"   -backend-config="profile=node-app-terraform-dev"
+```
 
-# Select tfvars for the environment
-# Run command from ./infra (This is where all .tf files are located)
-AWS_PROFILE=node-app-terraform-dev terraform plan -var-file=envs/dev.tfvars
+---
+
+## 2 · Build & push the container image
+
+```bash
+docker buildx create --name multi --use 2>/dev/null || true
+docker buildx build   --platform linux/amd64   -t nrampling/demo-node-app:1.0.0   --push .
+```
+
+Update the image tag in `infra/envs/dev.tfvars`:
+
+```hcl
+docker_image = "nrampling/demo-node-app:1.0.0"
+```
+
+---
+
+## 3 · Deploy with Terraform
+
+```bash
+AWS_PROFILE=node-app-terraform-dev terraform plan  -var-file=envs/dev.tfvars
 
 AWS_PROFILE=node-app-terraform-dev terraform apply -var-file=envs/dev.tfvars
+```
 
-The networking layer, cluding VPC is assume to already exist. (eg. created via AWS console Public Subnets, VPC, Route Table, Internet Gateway)
+### Outputs (example)
 
-The AWS resources required for backend configurations were manually created via the console (eg. backend S3 for storing .tfstate files, DynamoDB for managing Lock file)
+```text
+alb_dns_name = dev-app-alb-123456.ap-southeast-2.elb.amazonaws.com
+cluster_name = dev-ecs-cluster
+```
+
+Open:
+
+```
+http://dev-app-alb-123456.ap-southeast-2.elb.amazonaws.com/ping
+```
+
+once the ALB target turns **healthy**.
+
+---
+
+## What’s next?
+
+* **CI/CD (GitHub Actions)** – automated test → build amd64 image → push to Docker Hub → Terraform plan / apply.  
+  *(workflow file will be added in a future commit.)*
+* **HTTPS** – attach an ACM‑managed certificate and redirect port 80.
+* **Graviton (ARM)** – build multi‑arch image and switch the ASG to `t4g` instances.
+
+---
+
+## Contributing
+
+1. Create feature branch (`feature/<topic>`).
+2. Run `npm test` and `docker buildx build --platform linux/amd64 .`.
+3. Open a PR; describe the change clearly.
+
+---
+
+## Maintenance tips
+
+* `terraform validate` before every commit.  
+* Rotate Docker Hub and AWS credentials regularly.  
+* Use Dependabot or Renovate for dependency PRs.  
+* Watch the CloudWatch metric **ContainerExitCode >= 1** to catch crashes early.
+
+---
+
+## Author
+
+Nga Rampling
