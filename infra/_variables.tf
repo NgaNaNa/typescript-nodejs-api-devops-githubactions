@@ -61,9 +61,8 @@ variable "node_app_health_check_path" {
 }
 
 # Public docker image for the application
-variable "docker_image" {
-  type    = string
-  default = "nrampling/demo-node-app:1.0.0"
+variable "node_app_image" {
+  type = string
 }
 
 variable "desired_service_count" {
