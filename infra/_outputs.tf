@@ -13,3 +13,11 @@ output "capacity_provider_name" {
 output "asg_arn" {
   value = aws_autoscaling_group.ecs_asg.arn
 }
+
+output "alb_dns_name" {
+  value = aws_lb.app_alb.dns_name
+}
+
+output "service_name" {
+  value = aws_ecs_service.node_app_service.name
+}
