@@ -8,7 +8,7 @@ resource "aws_ecs_task_definition" "node_app_task" {
   container_definitions = jsonencode([
     {
       name  = var.node_app_container_name
-      image = var.docker_image
+      image = var.node_app_image
       portMappings = [{
         containerPort = var.container_port
         protocol      = "tcp"
@@ -22,13 +22,13 @@ resource "aws_ecs_task_definition" "node_app_task" {
         }
       }
       essential = true
-      # healthCheck = {
-      #   command     = ["CMD-SHELL", "wget -q -O - http://localhost:${var.container_port}${var.node_app_health_check_path} || exit 1"]
-      #   interval    = 30
-      #   timeout     = 5
-      #   retries     = 3
-      #   startPeriod = 10
-      # }
+      healthCheck = {
+        command     = ["CMD-SHELL", "wget -q -O - http://localhost:${var.container_port}${var.node_app_health_check_path} || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 10
+      }
     }
   ])
 }
