@@ -59,3 +59,9 @@ variable "node_app_health_check_path" {
   default     = "/ping"
   description = "Health check path for the target group"
 }
+
+# Public docker image for the application
+variable "docker_image" {
+  type    = string
+  default = "nrampling/demo-node-app:1.0.0"
+}
