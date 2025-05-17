@@ -4,7 +4,7 @@ resource "aws_lb_target_group" "node_app_tg" {
   port        = var.container_port
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
-  target_type = "ip"
+  target_type = "ip" # ECS uses IP as target type for the tasks ENI
 
   health_check {
     path                = var.node_app_health_check_path
