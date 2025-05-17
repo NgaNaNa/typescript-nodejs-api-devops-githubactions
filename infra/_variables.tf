@@ -75,3 +75,13 @@ variable "node_app_container_name" {
   type    = string
   default = "node-app"
 }
+
+variable "log_group_name" {
+  type    = string
+  default = "/ecs/node-app"
+}
+
+variable "log_stream_prefix" {
+  type    = string
+  default = "ecs"
+}
