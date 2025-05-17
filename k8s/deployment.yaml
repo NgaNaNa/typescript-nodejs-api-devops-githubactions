@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: demo-node-app
-        image: nrampling/demo-node-app:1.0.0
+        image: nrampling/demo-node-app:1.0.3
         ports:
         - containerPort: 3000
 ---

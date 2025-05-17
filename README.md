@@ -17,45 +17,25 @@ The VPC, public subnets, Internet Gateway, and Terraform remote-state bucket (S3
 
 ---
 
-## Repo structure
-
-```
-infra/
-├─ _backend.tf             # remote state (S3 + DynamoDB)
-├─ _providers.tf           # AWS provider / default tags
-├─ _variables.tf           # all inputs
-├─ cluster.tf              # ECS cluster (awsvpc)
-├─ asg_capacity.tf         # ASG + capacity provider
-├─ task_definition.tf      # image, ports, health check, logs
-├─ ecs_service.tf          # service + load balancer attachment
-├─ cloudwatch_logs.tf
-└─ envs/
-   ├─ dev.tfvars
-   └─ prod.tfvars
-```
-
----
-
 ## 1 · Initialise Terraform (one‑time per env)
 
 ```bash
 cd infra
-terraform init   -backend-config="bucket=node-app-infra-tfstate-dev"   -backend-config="profile=node-app-terraform-dev"
+terraform init -reconfigure -backend-config=bucket=node-app-infra-tfstate-dev -backend-config=profile=node-app-terraform-dev
 ```
 
 ---
 
-## 2 · Build & push the container image
+## 2 · Build & push the container image (Apply new version tag where appropriate)
 
 ```bash
-docker buildx create --name multi --use 2>/dev/null || true
-docker buildx build   --platform linux/amd64   -t nrampling/demo-node-app:1.0.0   --push .
+docker buildx build --platform linux/amd64 -t nrampling/demo-node-app:1.0.2 --push .
 ```
 
 Update the image tag in `infra/envs/dev.tfvars`:
 
 ```hcl
-docker_image = "nrampling/demo-node-app:1.0.0"
+node_app_image = "nrampling/demo-node-app:1.0.2"
 ```
 
 ---
@@ -63,12 +43,12 @@ docker_image = "nrampling/demo-node-app:1.0.0"
 ## 3 · Deploy with Terraform
 
 ```bash
-AWS_PROFILE=node-app-terraform-dev terraform plan  -var-file=envs/dev.tfvars
+AWS_PROFILE=node-app-terraform-dev terraform plan -var-file=envs/dev.tfvars
 
 AWS_PROFILE=node-app-terraform-dev terraform apply -var-file=envs/dev.tfvars
 ```
 
-### Outputs (example)
+### Outputs (example only - plug in aws account)
 
 ```text
 alb_dns_name = dev-app-alb-123456.ap-southeast-2.elb.amazonaws.com

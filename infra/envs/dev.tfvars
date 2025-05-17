@@ -6,4 +6,4 @@ alb_public_subnet_ids = ["subnet-055583b9b74d44b56", "subnet-0e9b56625d00f6c88",
 
 vpc_id = "vpc-0fabd74c01d8c9d4a"
 
-node_app_image = "nrampling/demo-node-app:1.0.2"
+node_app_image = "nrampling/demo-node-app:1.0.3"
