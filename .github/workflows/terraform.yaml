@@ -8,6 +8,11 @@ on:
     branches:
     - main
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 env:
   # Verbosity setting for Terraform logs
   TF_LOG: ERROR
