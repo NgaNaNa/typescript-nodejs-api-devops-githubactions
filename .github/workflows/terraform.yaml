@@ -96,7 +96,7 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -auto-approve -input=false
+        run: terraform apply -var-file=envs/dev.tfvars -no-color -auto-approve -input=false # TODO: use tf plan file
 
 # # Terraform Prod CI
 #   terraform-prod-ci:
