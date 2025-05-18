@@ -1,8 +1,8 @@
 # TypeScript Node.js API → Docker → Amazon ECS
 *(local build & Terraform deploy – GitHub Actions pipeline coming soon)*
 
-This repo walks you through containerising a simple Express API, pushing the image to Docker Hub, and standing up the runtime stack on **Amazon ECS (EC2 capacity)** with **Terraform**.  
-The VPC, public subnets, Internet Gateway, and Terraform remote-state bucket (S3 + DynamoDB) are assumed to exist already.
+This repo walks you through containerising a simple Node.js API, pushing the image to Docker Hub, and provisioning the infrastructure on **Amazon ECS (EC2 capacity)** with **Terraform**. 
+The VPC, Public Subnets, Internet Gateway, Route Table and Terraform remote-state bucket (S3 + DynamoDB) are assumed to exist already.
 
 ---
 
@@ -10,9 +10,9 @@ The VPC, public subnets, Internet Gateway, and Terraform remote-state bucket (S3
 
 | Tool / service | Notes |
 |----------------|-------|
-| **AWS CLI v2** | Profile used below: `node-app-terraform-dev` |
-| **Terraform ≥ 1.7** | Remote backend: S3 bucket `node-app-infra-tfstate-<env>` |
-| **Docker v24+** | Buildx enabled (comes pre‑installed) |
+| **AWS CLI v2** | Profile used below: `node-app-terraform-<env>` |
+| **Terraform ≥ 1.11.3** | Remote backend: S3 bucket `node-app-infra-tfstate-<env>` |
+| **Docker v20.10.18+** | Buildx enabled (comes pre‑installed) |
 | **Docker Hub account** | Public repo: `nrampling/demo-node-app` |
 
 ---
@@ -29,7 +29,7 @@ terraform init -reconfigure -backend-config=bucket=node-app-infra-tfstate-dev -b
 ## 2 · Build & push the container image (Apply new version tag where appropriate)
 
 ```bash
-docker buildx build --platform linux/amd64 -t nrampling/demo-node-app:1.0.2 --push .
+docker buildx build --platform linux/amd64,linux/arm64 -t nrampling/demo-node-app:1.0.2 --push .
 ```
 
 Update the image tag in `infra/envs/dev.tfvars`:
@@ -65,29 +65,61 @@ once the ALB target turns **healthy**.
 
 ---
 
-## What’s next?
-
-* **CI/CD (GitHub Actions)** – automated test → build amd64 image → push to Docker Hub → Terraform plan / apply.  
-  *(workflow file will be added in a future commit.)*
-* **HTTPS** – attach an ACM‑managed certificate and redirect port 80.
-* **Graviton (ARM)** – build multi‑arch image and switch the ASG to `t4g` instances.
-
----
-
 ## Contributing
 
 1. Create feature branch (`feature/<topic>`).
-2. Run `npm test` and `docker buildx build --platform linux/amd64 .`.
-3. Open a PR; describe the change clearly.
+2. Open a PR; describe the change clearly.
 
 ---
 
 ## Maintenance tips
 
-* `terraform validate` before every commit.  
-* Rotate Docker Hub and AWS credentials regularly.  
-* Use Dependabot or Renovate for dependency PRs.  
-* Watch the CloudWatch metric **ContainerExitCode >= 1** to catch crashes early.
+* `terraform validate` before every commit. Do it from /infra
+* Rotate Docker Hub and AWS credentials regularly.   
+* Create some kind of CloudWatch monitoring. ie CloudWatch metric **ContainerExitCode >= 1** to catch crashes.
+
+---
+
+## GitHub Actions for Terraform CI/CD – Demo Node.js API App
+This GitHub Actions workflow automates the infrastructure provisioning lifecycle for the demo Node.js app using Terraform.
+
+### Workflow Triggers
+Pull Requests to main: Run CI checks (format, validate, plan).
+
+Push to main: Auto-applies Terraform to deploy infrastructure in dev.
+
+### Job: terraform-dev
+- Runs inside the infra/ directory
+
+- terraform init: Uses a backend config with an S3 bucket passed as a secret.
+
+- On PRs:
+  - Checks formatting consistency.
+  - Validates Terraform configuration.
+  - Creates an execution plan using envs/dev.tfvars
+  - Automatically comments the plan and outcomes back to the PR using actions/github-script.
+
+- On Plan Failure:
+  - Marks the PR check as failed (exit 1).
+
+- On Push to Main:
+  - Executes terraform apply with dev.tfvars, auto-approving without manual input.
+
+### Security and Permissions
+GitHub token permissions are explicitly set to allow reading content and commenting on PRs.
+
+### Notes
+Production-related jobs (terraform-prod-ci and terraform-prod-cd) are defined but commented out (Preparation for future)
+The workflow is scoped to infrastructure compute resource only deployments, not application code or Docker builds.
+
+---
+
+## What’s next?
+
+* **CI/CD (GitHub Actions)** – automated test → build amd64 image → push to Docker Hub → Terraform plan / apply.  
+  *(workflow file will be added in a future commit.)*
+* **HTTPS** – attach an ACM‑managed certificate
+* **Graviton (ARM)** – build multi‑arch image and switch the ASG to `t4g` instances.
 
 ---
 
