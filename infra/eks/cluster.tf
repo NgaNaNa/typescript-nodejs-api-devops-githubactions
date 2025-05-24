@@ -8,6 +8,12 @@ module "eks" {
   vpc_id     = var.vpc_id
   subnet_ids = var.app_public_subnet_ids
 
+  cluster_endpoint_private_access      = true
+  cluster_endpoint_public_access       = true
+  cluster_endpoint_public_access_cidrs = ["119.15.74.49/32"]
+
+  enable_cluster_creator_admin_permissions = true
+
   # This config maps to an Auto Scaling Group under the hood
   eks_managed_node_groups = {
     default = {
