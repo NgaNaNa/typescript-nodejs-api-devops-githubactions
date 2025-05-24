@@ -1,0 +1,202 @@
+name: "Terraform CICD - AWS EKS Cluster"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+    - 'infra/eks/**'
+    - 'infra/envs/**'
+    - '.github/workflows/eks_terraform.yaml'
+  push:
+    branches: [main]
+    paths:
+    - 'infra/eks/**'
+    - 'infra/envs/**'
+    - '.github/workflows/eks_terraform.yaml'
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+env:
+  # Verbosity setting for Terraform logs
+  TF_LOG: ERROR
+  # Credentials for deployment to AWS
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  # S3 bucket for the Terraform state
+  BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE}}
+
+jobs:
+# Terraform Dev CICD
+  terraform-dev:
+    name: "Terraform Infra CICD Dev"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: infra/ecs
+    environment: dev
+
+    steps:
+      - name: Checkout the repository to the runner
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform with specified version on the runner
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.11.3
+
+      - name: Terraform init dev
+        id: init-dev
+        run: terraform init -reconfigure -backend-config=bucket=$BUCKET_TF_STATE
+
+      # Quality checks DEV
+      - name: Terraform format
+        id: fmt-dev
+        if: github.event_name == 'pull_request'
+        run: terraform fmt -check
+
+      - name: Terraform validate
+        id: validate-dev
+        if: github.event_name == 'pull_request'
+        run: terraform validate
+      
+      - name: Terraform plan - dev
+        id: plan-dev
+        if: github.event_name == 'pull_request'
+        run: terraform plan -var-file=../envs/dev.tfvars -no-color -input=false
+        continue-on-error: true
+
+      - uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan-dev.outputs.stdout }}"
+        with:
+          script: |
+           const output = `#### Terraform Format and Style - DEV 🖌\`${{ steps.fmt-dev.outcome }}\`
+           #### Terraform Initialization - DEV ⚙️\`${{ steps.init-dev.outcome }}\`
+           #### Terraform Validation - DEV 🤖\`${{ steps.validate-dev.outcome }}\`
+           #### Terraform Plan - DEV 📖\`${{ steps.plan-dev.outcome }}\`
+ 
+           <details><summary>Show Plan</summary>
+ 
+           \`\`\`\n
+           ${process.env.PLAN}
+           \`\`\`
+ 
+           </details>
+           *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+           github.rest.issues.createComment({
+             issue_number: context.issue.number,
+             owner: context.repo.owner,
+             repo: context.repo.repo,
+             body: output
+           })
+
+      - name: Terraform Plan Status
+        if: steps.plan-dev.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -var-file=../envs/dev.tfvars -no-color -auto-approve -input=false # TODO: use tf plan file
+
+# # Terraform Prod CI
+#   terraform-prod-ci:
+#     name: "Terraform Infra CI Prod"
+#     runs-on: ubuntu-latest
+#     defaults:
+#       run:
+#         shell: bash
+#     environment: prod
+
+#     steps:
+#       - name: Checkout the repository to the runner
+#         uses: actions/checkout@v4
+
+#       - name: Setup Terraform with specified version on the runner
+#         uses: hashicorp/setup-terraform@v3
+#         with:
+#           terraform_version: 1.11.3
+
+#       - name: Terraform init prod
+#         id: init-prod
+#         run: terraform init -reconfigure -backend-config=bucket=$BUCKET_TF_STATE  #Create new bucket for prod
+
+#       # Quality checks PROD
+#       - name: Terraform format
+#         id: fmt-prod
+#         if: github.event_name == 'pull_request'
+#         run: terraform fmt -check
+
+#       - name: Terraform validate
+#         id: validate-prod
+#         if: github.event_name == 'pull_request'
+#         run: terraform validate
+      
+#       - name: Terraform plan - prod
+#         id: plan-prod
+#         if: github.event_name == 'pull_request'
+#         run: terraform plan -var-file=../envs/prod.tfvars -no-color -input=false
+#         continue-on-error: true
+
+#       - uses: actions/github-script@v6
+#         if: github.event_name == 'pull_request'
+#         env:
+#           PLAN: "terraform\n${{ steps.plan-prod.outputs.stdout }}"
+#         with:
+#           script: |
+#            const output = `#### Terraform Format and Style - PROD 🖌\`${{ steps.fmt-prod.outcome }}\`
+#            #### Terraform Initialization - PROD ⚙️\`${{ steps.init-prod.outcome }}\`
+#            #### Terraform Validation - PROD 🤖\`${{ steps.validate-prod.outcome }}\`
+#            #### Terraform Plan - PROD 📖\`${{ steps.plan-prod.outcome }}\`
+ 
+#            <details><summary>Show Plan</summary>
+ 
+#            \`\`\`\n
+#            ${process.env.PLAN}
+#            \`\`\`
+ 
+#            </details>
+#            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+#            github.rest.issues.createComment({
+#              issue_number: context.issue.number,
+#              owner: context.repo.owner,
+#              repo: context.repo.repo,
+#              body: output
+#            })
+
+#       - name: Terraform Plan Status
+#         if: steps.plan-prod.outcome == 'failure'
+#         run: exit 1
+
+# # Terraform PROD CD
+#   terraform-prod-cd:
+#     name: "Terraform Infra CD Prod"
+#     needs: [terraform-dev, terraform-prod-ci]
+#     runs-on: ubuntu-latest
+#     defaults:
+#       run:
+#         shell: bash
+#     environment: prod
+
+#     steps:
+#       - name: Checkout the repository to the runner
+#         uses: actions/checkout@v3
+
+#       - name: Setup Terraform with specified version on the runner
+#         uses: hashicorp/setup-terraform@v2
+#         with:
+#           terraform_version: 1.3.9
+
+#       - name: Terraform init prod
+#         id: init-prod
+#         run: terraform init -reconfigure -backend-config=bucket=$BUCKET_TF_STATE
+
+#       - name: Terraform Apply
+#         if: github.ref == 'refs/heads/main' && github.event_name == 'push' # only on push/merge to main
+#         run: terraform apply -auto-approve -input=false

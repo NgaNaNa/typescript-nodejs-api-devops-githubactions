@@ -1,5 +1,30 @@
 # TypeScript Node.js API → Docker → Amazon ECS
-*(local build & Terraform deploy – GitHub Actions pipeline coming soon)*
+*(local build & Terraform deploy – GitHub Actions EKS Infra CICD pipeline)*
+
+This repo walks you through containerising a simple Node.js API, pushing the image to Docker Hub, and provisioning the infrastructure on **Amazon EKS (EC2 capacity)** with **Terraform**. 
+The VPC, Public Subnets, Internet Gateway, Route Table and Terraform remote-state bucket (S3 + DynamoDB) are assumed to exist already.
+
+Remote backend: S3 bucket `node-app-eks-tfstate-<env>`
+
+## 1 · Initialise Terraform (one‑time per env)
+
+```bash
+cd infra/eks
+terraform init -reconfigure -backend-config=bucket=node-app-eks-tfstate-dev -backend-config=profile=node-app-terraform-dev
+```
+
+## 3 · Deploy with Terraform from directory infra/eks/
+
+```bash
+AWS_PROFILE=node-app-terraform-dev terraform plan -var-file=../envs/dev.tfvars
+
+AWS_PROFILE=node-app-terraform-dev terraform apply -var-file=../envs/dev.tfvars
+```
+
+
+
+# TypeScript Node.js API → Docker → Amazon ECS
+*(local build & Terraform deploy – GitHub Actions ECS Infra CICD pipeline)*
 
 This repo walks you through containerising a simple Node.js API, pushing the image to Docker Hub, and provisioning the infrastructure on **Amazon ECS (EC2 capacity)** with **Terraform**. 
 The VPC, Public Subnets, Internet Gateway, Route Table and Terraform remote-state bucket (S3 + DynamoDB) are assumed to exist already.
@@ -20,19 +45,21 @@ The VPC, Public Subnets, Internet Gateway, Route Table and Terraform remote-stat
 ## 1 · Initialise Terraform (one‑time per env)
 
 ```bash
-cd infra
+cd infra/ecs
 terraform init -reconfigure -backend-config=bucket=node-app-infra-tfstate-dev -backend-config=profile=node-app-terraform-dev
 ```
 
 ---
 
-## 2 · Build & push the container image (Apply new version tag where appropriate)
+## 2 · Local Build & push the container image (Apply new version tag)
 
 ```bash
 docker buildx build --platform linux/amd64,linux/arm64 -t nrampling/demo-node-app:1.0.2 --push .
 ```
-
-Update the image tag in `infra/envs/dev.tfvars`:
+For ECS workload
+Update the image tag in `infra/ecs/envs/dev.tfvars`:
+For EKS workload
+Update the image tag in `infra/eks/envs/dev.tfvars`:
 
 ```hcl
 node_app_image = "nrampling/demo-node-app:1.0.2"
@@ -40,12 +67,12 @@ node_app_image = "nrampling/demo-node-app:1.0.2"
 
 ---
 
-## 3 · Deploy with Terraform
+## 3 · Deploy with Terraform from directory infra/ecs/
 
 ```bash
-AWS_PROFILE=node-app-terraform-dev terraform plan -var-file=envs/dev.tfvars
+AWS_PROFILE=node-app-terraform-dev terraform plan -var-file=../envs/dev.tfvars
 
-AWS_PROFILE=node-app-terraform-dev terraform apply -var-file=envs/dev.tfvars
+AWS_PROFILE=node-app-terraform-dev terraform apply -var-file=../envs/dev.tfvars
 ```
 
 ### Outputs (example only - plug in aws account)
