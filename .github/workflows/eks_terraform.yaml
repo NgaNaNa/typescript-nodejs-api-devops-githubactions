@@ -1,12 +1,18 @@
-name: "Terraform CICD - AWS ECS Instance"
+name: "Terraform CICD - AWS EKS Cluster"
 
 on:
   pull_request:
-    branches:
-    - main
+    branches: [main]
+    paths:
+    - 'infra/eks/**'
+    - 'infra/envs/**'
+    - '.github/workflows/eks_terraform.yaml'
   push:
-    branches:
-    - main
+    branches: [main]
+    paths:
+    - 'infra/eks/**'
+    - 'infra/envs/**'
+    - '.github/workflows/eks_terraform.yaml'
 
 permissions:
   contents: read
@@ -20,7 +26,7 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   # S3 bucket for the Terraform state
-  BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE}}
+  BUCKET_TF_STATE: ${{ secrets.EKS_BUCKET_TF_STATE}}
 
 jobs:
 # Terraform Dev CICD
@@ -30,7 +36,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: infra
+        working-directory: infra/ecs
     environment: dev
 
     steps:
@@ -60,7 +66,7 @@ jobs:
       - name: Terraform plan - dev
         id: plan-dev
         if: github.event_name == 'pull_request'
-        run: terraform plan -var-file=envs/dev.tfvars -no-color -input=false
+        run: terraform plan -var-file=../envs/dev.tfvars -no-color -input=false
         continue-on-error: true
 
       - uses: actions/github-script@v7
@@ -96,7 +102,7 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: terraform apply -var-file=envs/dev.tfvars -no-color -auto-approve -input=false # TODO: use tf plan file
+        run: terraform apply -var-file=../envs/dev.tfvars -no-color -auto-approve -input=false # TODO: use tf plan file
 
 # # Terraform Prod CI
 #   terraform-prod-ci:
@@ -134,7 +140,7 @@ jobs:
 #       - name: Terraform plan - prod
 #         id: plan-prod
 #         if: github.event_name == 'pull_request'
-#         run: terraform plan -var-file=envs/prod.tfvars -no-color -input=false
+#         run: terraform plan -var-file=../envs/prod.tfvars -no-color -input=false
 #         continue-on-error: true
 
 #       - uses: actions/github-script@v6
