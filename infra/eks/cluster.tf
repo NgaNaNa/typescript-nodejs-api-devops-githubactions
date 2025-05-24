@@ -11,7 +11,7 @@ module "eks" {
   # This config maps to an Auto Scaling Group under the hood
   eks_managed_node_groups = {
     default = {
-      instance_types = ["var.instance_type"]
+      instance_types = [var.instance_type]
       desired_size   = 1
       min_size       = 1
       max_size       = 2

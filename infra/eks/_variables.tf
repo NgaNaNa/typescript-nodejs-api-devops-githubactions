@@ -22,10 +22,10 @@ variable "alb_public_subnet_ids" {
   type = list(string)
 }
 
-# variable "instance_type" {
-#   type    = string
-#   default = "t2.micro"
-# }
+variable "instance_type" {
+  type    = string
+  default = "t2.micro"
+}
 
 # variable "desired_capacity" {
 #   type    = number
