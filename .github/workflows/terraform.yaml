@@ -30,7 +30,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: infra
+        working-directory: infra/ecs
     environment: dev
 
     steps:
