@@ -1,6 +1,6 @@
 name: "Terraform CICD - AWS ECS Instance"
 
-# Automation for AWS ECS Instance using Terraform is PAUSED. Use manual deployment for now.
+# Automation for AWS ECS Instance using Terraform is PAUSED. Use/Create manual deployment for now.
 on:
   # pull_request:
   #   branches: [main]
@@ -14,7 +14,7 @@ on:
   #   - 'infra/ecs/**'
   #   - 'infra/envs/**'
   #   - '.github/workflows/ecs_terraform.yaml'
-  workflow_dispatch: {} # Enable manual trigger for the workflow
+  workflow_dispatch: {} # Enable manual trigger for the workflow, but still need to configure the trigger in the GitHub UI. Manual deployment hasn't been implemented yet.
 
 permissions:
   contents: read
