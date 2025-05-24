@@ -24,7 +24,7 @@ variable "alb_public_subnet_ids" {
 
 variable "instance_type" {
   type    = string
-  default = "t2.micro"
+  default = "t3.small"
 }
 
 # variable "desired_capacity" {
