@@ -19,6 +19,8 @@ terraform init -reconfigure -backend-config=bucket=node-app-eks-tfstate-dev -bac
 AWS_PROFILE=node-app-terraform-dev terraform plan -var-file=../envs/dev.tfvars
 
 AWS_PROFILE=node-app-terraform-dev terraform apply -var-file=../envs/dev.tfvars
+
+AWS_PROFILE=node-app-terraform-dev terraform destroy  -var-file=../envs/dev.tfvars
 ```
 
 
