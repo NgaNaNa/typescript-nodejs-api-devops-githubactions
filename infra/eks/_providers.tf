@@ -13,8 +13,7 @@ provider "kubernetes" {
   }
 }
 
-resource "kubernetes_namespace" "app" {
-  metadata { name = "node-api" }
-}
+# resource "kubernetes_namespace" "node-app" {
+#   metadata { name = "node-api" }
+# }
 
-# Kustomize, kubectl_manifest, or Helm chart can follow here for Deployment/Service/Ingress
