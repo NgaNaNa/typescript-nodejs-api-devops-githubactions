@@ -1,0 +1,16 @@
+# helm/ingress-nginx-values.yaml
+controller:
+  replicaCount: 1
+
+  service:
+    type: LoadBalancer
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb-ip"
+      service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+
+  ingressClassResource:
+    name: nginx       # matches ingressClassName in your app Ingress
+    enabled: true
+
+  admissionWebhooks:
+    enabled: false    # optional: speeds up first-time install
