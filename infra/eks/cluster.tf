@@ -3,14 +3,14 @@ module "eks" {
   version = "~> 20.0"
 
   cluster_name    = "${var.environment}-eks"
-  cluster_version = "1.30"
+  cluster_version = "1.31"
 
   vpc_id     = var.vpc_id
   subnet_ids = var.app_public_subnet_ids
 
-  cluster_endpoint_private_access      = true
-  cluster_endpoint_public_access       = true
-  cluster_endpoint_public_access_cidrs = ["119.15.74.49/32"]
+  cluster_endpoint_private_access = true
+  cluster_endpoint_public_access  = true
+  # cluster_endpoint_public_access_cidrs = ["119.15.74.49/32"]
 
   enable_cluster_creator_admin_permissions = true
 

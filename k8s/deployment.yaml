@@ -4,29 +4,31 @@ metadata:
   name: demo-node-app
 spec:
   replicas: 1
-  selector:
-    matchLabels:
-      app: demo-node-app
-  template:
-    metadata:
+  selector: # Selector is used to find which Pods are part of this Deployment.
+    matchLabels: # A simple key/value filter: any Pod whose labels include all listed pairs is part of the set.
+      app: demo-node-app # Needs to match the label in the pod template
+  template: # Template is used to create Pods.
+    metadata: # Metadata is used to set labels and annotations on the Pods.
       labels:
         app: demo-node-app
-    spec:
-      containers:
-      - name: demo-node-app
+    spec: # Spec is used to define the containers that will run in the Pods.
+      containers: # An array of container definitions. A Pod can run one or many containers that share the same network namespace and volumes.
+      - name: demo-node-app # A unique identifier within this Pod for the container. Used in logs, metrics, and when referencing the container in probes or kubectl exec -c demo-node-app
         image: nrampling/demo-node-app:1.0.3
         ports:
         - containerPort: 3000
-# ---
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: demo-node-app-svc
-# spec:
-#   selector:
-#     app: demo-node-app
-#   ports:
-#     - protocol: TCP
-#       port: 3000
-#       targetPort: 3000
-#   type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-node-app-svc
+  labels:
+    app: demo-node-app
+spec:
+  type: ClusterIP
+  selector:
+    app: demo-node-app
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
