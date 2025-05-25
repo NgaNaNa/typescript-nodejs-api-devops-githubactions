@@ -1,10 +1,21 @@
-# TypeScript Node.js API → Docker → Amazon ECS
-*(local build & Terraform deploy – GitHub Actions EKS Infra CICD pipeline)*
+# TypeScript Node.js API → Docker → Amazon EKS (GitHub CICD for Infra) -> k8s
+*(Kubernetes resources are deployed from local at the moment. GitHub CI/CD in future)*
 
-This repo walks you through containerising a simple Node.js API, pushing the image to Docker Hub, and provisioning the infrastructure on **Amazon EKS (EC2 capacity)** with **Terraform**. 
-The VPC, Public Subnets, Internet Gateway, Route Table and Terraform remote-state bucket (S3 + DynamoDB) are assumed to exist already.
+For convenient, go to url to see the 'very basic' node.js api app deployed on EKS!
+http://ad1a9f084ef53444c8cdc00db8ecba84-a7930b60602a3012.elb.ap-southeast-2.amazonaws.com/ping
 
-Remote backend: S3 bucket `node-app-eks-tfstate-<env>`
+This repo walks you through containerising a simple Node.js API (Local Build), pushing the image to Docker Hub (From local), and provisioning the infrastructure on **Amazon EKS (EC2 capacity)** with **Terraform** and **GitHub CI/CD**. 
+
+The VPC, Public Subnets, and Terraform remote-state bucket (S3 + DynamoDB) are assumed to exist already.
+
+## Prerequisites
+
+| Tool / service | Notes |
+|----------------|-------|
+| **AWS CLI v2** | Profile used below: `node-app-terraform-<env>` |
+| **Terraform ≥ 1.11.3** | Remote backend: S3 bucket `node-app-eks-tfstate-<env>` |
+| **Docker v20.10.18+** | Buildx enabled (comes pre‑installed) |
+| **Docker Hub account** | Public repo: `nrampling/demo-node-app` |
 
 ## 1 · Initialise Terraform (one‑time per env)
 
@@ -13,7 +24,16 @@ cd infra/eks
 terraform init -reconfigure -backend-config=bucket=node-app-eks-tfstate-dev -backend-config=profile=node-app-terraform-dev
 ```
 
-## 3 · Deploy with Terraform from directory infra/eks/
+## 2 · Local Build & push the container image (Apply new version tag)
+
+```bash
+docker buildx build --platform linux/amd64,linux/arm64 -t nrampling/demo-node-app:1.0.2 --push .
+```
+
+Update the image tag in `infra/eks/envs/dev.tfvars`
+
+
+## 3 · Deploy with Terraform from directory infra/eks
 
 ```bash
 AWS_PROFILE=node-app-terraform-dev terraform plan -var-file=../envs/dev.tfvars
@@ -23,10 +43,34 @@ AWS_PROFILE=node-app-terraform-dev terraform apply -var-file=../envs/dev.tfvars
 AWS_PROFILE=node-app-terraform-dev terraform destroy  -var-file=../envs/dev.tfvars
 ```
 
+## 4 · Set up kubeconfig context
+```bash
+AWS_PROFILE=node-app-terraform-dev aws eks update-kubeconfig --region ap-southeast-2 --name dev-eks
+kubectl get nodes
+```
+Deploy by applying manifest file
+```bash
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/ingress.yaml
+```
+You should get this...
+```bash
+deployment.apps/demo-node-app created
+service/demo-node-app-svc created
+```
+Lookup for url for the exposed k8s Service for ingress-nginx controller
+```bash
+kubectl -n ingress-nginx get svc
+```
+Deploy Helm chart
+```bash
+helm upgrade --install nginx-ingress ingress-nginx/ingress-nginx --version 4.11.6 --namespace ingress-nginx --create-namespace --values k8s/helm/ingress-nlb-nginx-values.yaml
+```
+---
 
+# Amazon ECS Infrastructure Provisioning using Terraform
 
-# TypeScript Node.js API → Docker → Amazon ECS
-*(local build & Terraform deploy – GitHub Actions ECS Infra CICD pipeline)*
+*(Please note, the PR trigger for automatically deploying changes to ECS (Infra resources) has been commented out (Disabled). This was introduced while I am working on GitHub CICD automation for deploying infra resources for AWS EKS. See above )*
 
 This repo walks you through containerising a simple Node.js API, pushing the image to Docker Hub, and provisioning the infrastructure on **Amazon ECS (EC2 capacity)** with **Terraform**. 
 The VPC, Public Subnets, Internet Gateway, Route Table and Terraform remote-state bucket (S3 + DynamoDB) are assumed to exist already.
@@ -60,8 +104,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t nrampling/demo-node-ap
 ```
 For ECS workload
 Update the image tag in `infra/ecs/envs/dev.tfvars`:
-For EKS workload
-Update the image tag in `infra/eks/envs/dev.tfvars`:
+
 
 ```hcl
 node_app_image = "nrampling/demo-node-app:1.0.2"
