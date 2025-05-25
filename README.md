@@ -1,10 +1,10 @@
 # TypeScript Node.js API → Docker → Amazon EKS (GitHub CICD for Infra) -> k8s
-*(Kubernetes resources are deployed from local at the moment. GitHub CI/CD in future)*
+*(Kubernetes Deployment, Service, Ingress resources are deployed from local at the moment. GitHub CI/CD in future)*
 
-For convenient, go to url to see the 'very basic' node.js api app deployed on EKS!
+Public url to see the 'very basic' node.js api app deployed on EKS:
 http://ad1a9f084ef53444c8cdc00db8ecba84-a7930b60602a3012.elb.ap-southeast-2.amazonaws.com/ping
 
-This repo walks you through containerising a simple Node.js API (Local Build), pushing the image to Docker Hub (From local), and provisioning the infrastructure on **Amazon EKS (EC2 capacity)** with **Terraform** and **GitHub CI/CD**. 
+This repo containerises a simple Node.js API (Local Build), pushes the image to Docker Hub (From local), and provisions the infrastructure on **Amazon EKS (EC2 capacity)** with **Terraform** and **GitHub CI/CD**. 
 
 The VPC, Public Subnets, and Terraform remote-state bucket (S3 + DynamoDB) are assumed to exist already.
 
@@ -48,7 +48,7 @@ AWS_PROFILE=node-app-terraform-dev terraform destroy  -var-file=../envs/dev.tfva
 AWS_PROFILE=node-app-terraform-dev aws eks update-kubeconfig --region ap-southeast-2 --name dev-eks
 kubectl get nodes
 ```
-Deploy by applying manifest file
+Deploy by applying k8s manifest files
 ```bash
 kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/ingress.yaml
@@ -58,13 +58,13 @@ You should get this...
 deployment.apps/demo-node-app created
 service/demo-node-app-svc created
 ```
-Lookup for url for the exposed k8s Service for ingress-nginx controller
-```bash
-kubectl -n ingress-nginx get svc
-```
 Deploy Helm chart
 ```bash
 helm upgrade --install nginx-ingress ingress-nginx/ingress-nginx --version 4.11.6 --namespace ingress-nginx --create-namespace --values k8s/helm/ingress-nlb-nginx-values.yaml
+```
+Lookup for url for the exposed k8s Service for ingress-nginx controller
+```bash
+kubectl -n ingress-nginx get svc
 ```
 ---
 
