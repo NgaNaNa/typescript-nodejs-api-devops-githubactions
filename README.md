@@ -33,7 +33,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t nrampling/demo-node-ap
 Update the image tag in `infra/eks/envs/dev.tfvars`
 
 
-## 3 · Deploy with Terraform from directory infra/eks
+## 3 · Deploy with Terraform from directory infra/eks/
 
 ```bash
 AWS_PROFILE=node-app-terraform-dev terraform plan -var-file=../envs/dev.tfvars
@@ -66,7 +66,46 @@ Lookup for url for the exposed k8s Service for ingress-nginx controller
 ```bash
 kubectl -n ingress-nginx get svc
 ```
+
+
 ---
+
+## GitHub Actions for Terraform CI/CD – EKS Infra
+This GitHub Actions workflow automates the infrastructure provisioning lifecycle for the demo Node.js app using Terraform.
+
+### Workflow Triggers
+Pull Requests to main: Run CI checks (format, validate, plan).
+
+Push to main: Auto-applies Terraform to deploy infrastructure in dev.
+
+### Job: terraform-dev
+- Runs inside the infra/ directory
+
+- terraform init: Uses a backend config with an S3 bucket passed as a secret.
+
+- On PRs:
+  - Checks formatting consistency.
+  - Validates Terraform configuration.
+  - Creates an execution plan using envs/dev.tfvars
+  - Automatically comments the plan and outcomes back to the PR using actions/github-script.
+
+- On Plan Failure:
+  - Marks the PR check as failed (exit 1).
+
+- On Push to Main:
+  - Executes terraform apply with dev.tfvars, auto-approving without manual input.
+
+### Security and Permissions
+GitHub token permissions are explicitly set to allow reading content and commenting on PRs.
+
+### Notes
+Production-related jobs (terraform-prod-ci and terraform-prod-cd) are defined but commented out (Preparation for future)
+The workflow is scoped to infrastructure compute resource only deployments, not application code or Docker builds.
+
+---
+
+---
+
 
 # Amazon ECS Infrastructure Provisioning using Terraform
 
@@ -126,14 +165,6 @@ AWS_PROFILE=node-app-terraform-dev terraform apply -var-file=../envs/dev.tfvars
 alb_dns_name = dev-app-alb-123456.ap-southeast-2.elb.amazonaws.com
 cluster_name = dev-ecs-cluster
 ```
-
-Open:
-
-```
-http://dev-app-alb-123456.ap-southeast-2.elb.amazonaws.com/ping
-```
-
-once the ALB target turns **healthy**.
 
 ---
 
@@ -198,5 +229,3 @@ The workflow is scoped to infrastructure compute resource only deployments, not 
 ## Author
 
 Nga Rampling
-
-# Testing 
