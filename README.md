@@ -1,12 +1,9 @@
-# TypeScript Node.js API → Docker → Amazon EKS (GitHub CICD for Infra) -> k8s
+# TypeScript Node.js API → Docker → Amazon EKS (GitHub CICD for Infra) -> k8s manifest
 *(Kubernetes Deployment, Service, Ingress resources are deployed from local at the moment. GitHub CI/CD in future)*
-
-Public url to see the 'very basic' node.js api app deployed on EKS:
-http://ad1a9f084ef53444c8cdc00db8ecba84-a7930b60602a3012.elb.ap-southeast-2.amazonaws.com/ping
 
 This repo containerises a simple Node.js API (Local Build), pushes the image to Docker Hub (From local), and provisions the infrastructure on **Amazon EKS (EC2 capacity)** with **Terraform** and **GitHub CI/CD**. 
 
-The VPC, Public Subnets, and Terraform remote-state bucket (S3 + DynamoDB) are assumed to exist already.
+The VPC, Public Subnets, Route table, IGW and Terraform remote-state bucket (S3 + DynamoDB) are assumed to exist already.
 
 ## Prerequisites
 
@@ -17,7 +14,7 @@ The VPC, Public Subnets, and Terraform remote-state bucket (S3 + DynamoDB) are a
 | **Docker v20.10.18+** | Buildx enabled (comes pre‑installed) |
 | **Docker Hub account** | Public repo: `nrampling/demo-node-app` |
 
-## 1 · Initialise Terraform (one‑time per env)
+## 1 · Initialise Terraform (one‑time per env) - From Local
 
 ```bash
 cd infra/eks
@@ -33,7 +30,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t nrampling/demo-node-ap
 Update the image tag in `infra/eks/envs/dev.tfvars`
 
 
-## 3 · Deploy with Terraform from directory infra/eks/
+## 3 · For local Deploy with Terraform from directory infra/eks/ (CI/CD option is explained further down)
 
 ```bash
 AWS_PROFILE=node-app-terraform-dev terraform plan -var-file=../envs/dev.tfvars
@@ -74,9 +71,15 @@ kubectl -n ingress-nginx get svc
 This GitHub Actions workflow automates the infrastructure provisioning lifecycle for the demo Node.js app using Terraform.
 
 ### Workflow Triggers
-Pull Requests to main: Run CI checks (format, validate, plan).
+Upon changes to the files from the following path:
+    - 'infra/eks/**'
+    - 'infra/envs/**'
+    - '.github/workflows/eks_terraform.yaml'
 
-Push to main: Auto-applies Terraform to deploy infrastructure in dev.
+and upon the following GitHub actions:
+- Pull Requests to main: Run CI checks (format, validate, plan).
+
+- Push to main: Auto-applies Terraform to deploy infrastructure in dev.
 
 ### Job: terraform-dev
 - Runs inside the infra/ directory
